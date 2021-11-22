@@ -1,48 +1,26 @@
 #include <code_formatting_program/formatter.h>
 
+#include <code_formatting_program/syntax_parser.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define LANGUAGE_C      0
-#define LANGUAGE_CPP    1
-#define LANGUAGE_CSHARP 2
-#define LANGUAGE_JAVA   3
-
-#define LANGUAGE_PHP    4
-#define LANGUAGE_HTML   5
-
-#define X_TRUE  1
-#define X_FALSE 0
-
-typedef struct Formatter
-{
-    // defines the language that is being formatted
-    int language; // TODO: add this in later, for now just make it work with .c files
-
-    // stores the original src
-    char* src;
-    size_t src_len;
-
-    char* output_location;
-
-    char* new_src;
-    size_t new_len;
-} Formatter;
-
-Formatter formatter;
-
 Formatter formatter_init();
 
+// getting the data
 int formatter_get_src();
 void formatter_get_output_location();
 
+// conditions and cleanup
 int continue_formate();
 void formatter_destroy();
+
 void formatter_run()
 {
     formatter = formatter_init();
 
+    // getting the src to be formatted
     int condition = X_FALSE;
     while (!condition)
     {
@@ -52,7 +30,9 @@ void formatter_run()
             printf("\n\n");
     }
 
-    printf("\n\n======= src =======\n\n%s\n\n======= src =======\ncontinue? (yes || no): ", formatter.src);
+    // confirming that it is the right one 
+    printf("\n\n========= src =========\n%s\n\n========= src =========\n[SRC_HTML_FORMATTER]: continue? (yes || no):\n[INPUT]: ", formatter.src);
+
     int result = continue_formate();
     if (!result)
     {
@@ -61,13 +41,20 @@ void formatter_run()
         return;
     }
 
+    // getting the output location where the formatted version will be stored
     formatter_get_output_location();
 
+    parser_set_highlight();
+
+    formatter_destroy();
+
+    printf("[SRC_HTML_FORMATTER]: success, exit program...");
+    getchar();
 }
 
 int formatter_get_src()
 {
-    printf("src to be formatted file location:\n");
+    printf("[SRC_HTML_FORMATTER]: src to be formatted file location:\n[INPUT]: ");
 
     // getting the file's location from user input
     char file_path[200];
@@ -88,7 +75,7 @@ int formatter_get_src()
     FILE* file = fopen(file_path, "rb");
     if (file == NULL)
     {
-        printf("failed to find the path: %s\n", file_path);
+        printf("[SRC_HTML_FORMATTER]: failed to find the path: %s\n", file_path);
         return X_FALSE;
     }
 
@@ -101,22 +88,59 @@ int formatter_get_src()
     if (read_length != length)
     {
         free(buffer);
-        printf("failed to read the file at the file path: %s\n", file_path);
+        printf("[SRC_HTML_FORMATTER]: failed to read the file at the file path: %s\n", file_path);
         return X_FALSE;
     }
 
     buffer[length] = '\0';
 
     formatter.src = buffer;
-    formatter.src_len = length;
 
     return X_TRUE;
 }
 
 void formatter_get_output_location()
 {
-    
-}
+    for (size_t i = 0; i < 2; i++)
+    {
+        if (!i)
+            printf("[SRC_HTML_FORMATTER]: enter location of the new file:\n[INPUT]: ");
+        else 
+            printf("\n[SRC_HTML_FORMATTER]: enter name of the file:\n[INPUT]: ");
+
+        // get user input
+        char input[200];
+        for (size_t i = 0; i < 200; i++)
+            input[i] = '\0';
+
+        fgets(input, 200, stdin);
+        printf("\n");
+
+        for (size_t i = 0; i < 200; i++)
+        {
+            if (input[i] == '\n')
+            {
+                input[i] = '\0';
+                break;
+            }
+        }
+
+        // store input
+        size_t length = strlen(input);
+        if (!i)
+        {
+            // setting the location 
+            formatter.output_location = (char*)malloc(sizeof(char*) * length);
+            strcpy(formatter.output_location, input);
+        }
+        else
+        {
+            // setting the file name
+            formatter.file_name = (char*)malloc(sizeof(char*) * length);
+            strcpy(formatter.file_name, input);
+        }
+    }
+}   
 
 int continue_formate()
 {
@@ -128,11 +152,14 @@ int continue_formate()
 
         fgets(input, 200, stdin);
 
+        printf("\n");
+
         if (strcmp(input, "yes\n") == 0)
             return X_TRUE;
         else if (strcmp(input, "no\n") == 0)
             return X_FALSE;
     }
+
 }
 
 Formatter formatter_init()
@@ -140,12 +167,7 @@ Formatter formatter_init()
     Formatter formatter = (Formatter) {
         .language = 0,
 
-        .new_len = 0,
-        .new_src = NULL,
-
         .output_location = NULL,
-
-        .src_len = 0,
         .src = NULL
     };
 
@@ -154,11 +176,13 @@ Formatter formatter_init()
 
 void formatter_destroy()
 {
-    if (formatter.new_src != NULL)
-        free(formatter.new_src);
     if (formatter.output_location != NULL)
         free(formatter.output_location);
     if (formatter.src != NULL)
         free(formatter.src);
 }
+
+
+/* ================== PARSER ================== */
+
 
