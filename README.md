@@ -17,17 +17,19 @@ formatted version:
 
 #### the css 
 
-When putting the formatted code into your html file, you still have to define the css classes that each of the span containers represent. All of the classes that you will have to define. *Note: it is recommended that you use the ```<pre>``` or something similar container the code so that white spacing is correct*
+When putting the formatted code into your html file, you still have to define the css classes that each of the span containers represent. All of the classes that you will have to define. *Note: it is recommended that you use the* ```<pre>``` *or something similar container the code so that white spacing is correct*
 
-* .c.c /* comment */
-* .c.cdt /* custom data type */
-* .c.dt /* data type */
-* .c.s /* string */
-* .c.f /* function/macros */
-* .c.p /* parented, example: example->data */
-* .c.n
+* ```.c.c /* comment */```
+* ```.c.cdt /* custom data type */```
+* ```.c.dt /* data type */```
+* ```.c.s /* string */```
+* ```.c.f /* function/macros */```
+* ```.c.p /* parented, example: example->data */```
+* ```.c.n /* numbers */```
 
 **Some examples of the css:**
+
+```
 .c.c /* comment */
 {
   color: rgb(112, 112, 112);
@@ -39,6 +41,7 @@ When putting the formatted code into your html file, you still have to define th
   color: rgb(204, 119, 49);
   font-style: normal;
 }
+```
 
 ## Project Status
 
