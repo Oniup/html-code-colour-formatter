@@ -39,7 +39,7 @@
 static const int span_close_length = 6;
 static const char* span_close = "</span>";
 
-static const int sxy_datatype_length = 42;
+static const int sxy_datatype_length = 44;
 static const char* syx_datatype[] = {
     "short",
     "char",
@@ -64,6 +64,7 @@ static const char* syx_datatype[] = {
     "double*",
     "unsigned*",
     "signed*",
+    "void*",
 
     "size_t*",
     "uint8_t*",
@@ -72,6 +73,7 @@ static const char* syx_datatype[] = {
     "uint64_t*",
 
     "if",
+    "else",
     "for",
     "while",
     "continue",

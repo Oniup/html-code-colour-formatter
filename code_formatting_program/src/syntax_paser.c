@@ -8,6 +8,7 @@
 static int parsing_string = X_FALSE;
 static int parsing_parent = X_FALSE;
 static int parsing_number_count = 0;
+static int parsing_comment = X_FALSE;
 
 void parser_parse(FILE* out);
 void parser_file_exists(const char* file_path);
@@ -20,6 +21,7 @@ void parse_data_holder(FILE* out, char* current_key, size_t* current_size, char*
 void parse_string(FILE* out, char* current_key, size_t* current_size, char* last_key, size_t* last_size);
 void parse_parent(FILE* out, char* current_key, size_t* current_size, char* last_key, size_t* last_size, int custom, size_t* i);
 void parse_function(FILE* out, char* current_key, size_t* current_size, char* last_key, size_t* last_size);
+void parse_comment(FILE* out, char* current_key, size_t* current_size, size_t* i);
 
 void parser_set_highlight()
 {
@@ -83,7 +85,12 @@ void parser_parse(FILE* out)
         {
         // checking when the end of the keyword is or line (no colouring)
         case '\n':
-            if (!parsing_string)
+            if (parsing_comment)
+            {
+                parse_comment(out, current_key, &current_size, &i);
+                continue;
+            }
+            else if (!parsing_string)
             {
                 parse_data_holder(out, current_key, &current_size, last_key, &last_size, SYX_NEW_LINE);
                 continue;
@@ -98,11 +105,13 @@ void parser_parse(FILE* out)
         case ' ':
             parse_data_holder(out, current_key, &current_size, last_key, &last_size, SYX_NOTHING);
             continue;
-
+        case '/':
+            parse_comment(out, current_key, &current_size, &i);
+            continue;
         // checking if there is a string
         case '\"':
         case '\'':
-            if (!parsing_parent)
+            if (!parsing_parent && !parsing_comment)
             {
                 parse_string(out, current_key, &current_size, last_key, &last_size);
                 continue;
@@ -263,7 +272,7 @@ void parse_data_holder(FILE* out, char* current_key, size_t* current_size, char*
             }
 
             int type = SYX_NOTHING;
-            if (type == SYX_NOTHING)
+            if (type == SYX_NOTHING && !parsing_string && !parsing_comment)
             {
                 // checking whether it is a c data type
                 for (size_t i = 0; i < sxy_datatype_length; i++)
@@ -341,7 +350,7 @@ void parse_parent(FILE* out, char* current_key, size_t* current_size, char* last
     int is_numbers = parser_check_numbers(insert, *current_size);
     if (is_numbers == SYX_NOTHING)
     {
-        if (!parsing_parent)
+        if (!parsing_parent && !parsing_comment)
         {
             if (current_key[*current_size] == '.')
             {
@@ -411,7 +420,7 @@ void parse_parent(FILE* out, char* current_key, size_t* current_size, char* last
 void parse_function(FILE* out, char* current_key, size_t* current_size, char* last_key, size_t* last_size)
 {
     char* insert = parser_get_insert(current_key, *current_size);
-    if (!parsing_parent)
+    if (!parsing_parent && !parsing_comment)
     {
         if (insert != NULL)
             fprintf(out, "<span class=\"c f\">%s%s(", insert, span_close);
@@ -432,9 +441,55 @@ void parse_function(FILE* out, char* current_key, size_t* current_size, char* la
     parser_reset(current_key, current_size);
 }
 
+void parse_comment(FILE* out, char* current_key, size_t* current_size, size_t* i)
+{
+    if (!parsing_string && !parsing_comment)
+    {
+        if (current_key[*current_size] == '/')
+        {
+            if (formatter.src[*i + 1] == '/')
+            {
+                char* insert = parser_get_insert(current_key, *current_size);
+                if (insert != NULL)
+                {
+                    fprintf(out, "%s", insert);
+                    free(insert);
+                }
+                fprintf(out, "<span class=\"c c\">//");
+
+                parsing_comment = X_TRUE;
+                *i = *i + 1;
+                parser_reset(current_key, current_size);
+
+                return;
+            }
+        }
+    }
+
+    if (parsing_comment)
+    {
+        if (current_key[*current_size] == '\n')
+        {
+            char* insert = parser_get_insert(current_key, *current_size);
+            if (insert != NULL)
+            {
+                fprintf(out, "%s", insert);
+                free(insert);
+            }
+
+            fprintf(out, "</span>\n");
+
+            parsing_comment = X_FALSE;
+
+            parser_reset(current_key, current_size);
+        }
+    }
+
+}
+
 int parser_check_numbers(char* insert, size_t current_size)
 {
-    if (parsing_string)
+    if (parsing_string || parsing_comment)
         return SYX_NOTHING;
 
     if (parsing_number_count == current_size)
